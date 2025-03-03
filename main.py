@@ -92,8 +92,10 @@ def custom_decode_predictions(preds, class_labels, top=1):
 @app.get("/")
 def home():
     return {"message": "FastAPI Plant Prediction API is running!"}
-def read_root():
-    return {"message": "Hello from FastAPI on Render!"}
+    
+@app.head("/")
+async def head_root():
+    return {}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
