@@ -61,13 +61,12 @@ starlette==0.46.0
 tensorboard==2.15.2
 tensorboard-data-server==0.7.2
 tensorboard-plugin-wit==1.8.1
-tensorflow==2.15.0
+tensorflow
 tensorflow-estimator==2.15.0
 tensorflow-hub==0.16.1
-tensorflow==2.15.0
 tensorflow-io-gcs-filesystem==0.31.0
 termcolor==2.5.0
-tf_keras==2.18.0
+tf_keras
 tqdm==4.67.1
 typing_extensions==4.12.2
 urllib3==2.3.0
