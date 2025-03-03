@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 import os
+import uvicorn
 import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
@@ -91,6 +92,8 @@ def custom_decode_predictions(preds, class_labels, top=1):
 @app.get("/")
 def home():
     return {"message": "FastAPI Plant Prediction API is running!"}
+def read_root():
+    return {"message": "Hello from FastAPI on Render!"}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
@@ -105,4 +108,5 @@ async def predict(file: UploadFile = File(...)):
 
 # Run FastAPI
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=5000)
