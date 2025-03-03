@@ -40,7 +40,7 @@ def setup_dataset():
 setup_dataset()
 
 # Model path (Ensure this is available on Render or update accordingly)
-MODEL_PATH = "model.h5"  # Change to match your deployment setup
+MODEL_PATH = "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5"  # Change to match your deployment setup
 
 # Load the model with the custom KerasLayer
 print("Loading model...")
