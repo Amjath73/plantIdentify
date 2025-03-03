@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Species Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        video, canvas {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+        }
+        button {
+            margin: 10px 0;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h3 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Take a Picture of Your Plant</h1>
+    <video id="video" width="300" height="300" autoplay></video>
+    <button id="snap">Capture</button>
+    <canvas id="canvas" width="300" height="300" style="display: none;"></canvas>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" style="display:none;" accept="image/*">
+        <input type="submit" value="Predict">
+    </form>
+
+    <h3 id="prediction"></h3>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const predictionText = document.getElementById('prediction');
+
+        // Start the camera
+        async function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Your browser does not support camera access.');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (error) {
+                alert('Camera access denied or unavailable: ' + error);
+            }
+        }
+
+        document.getElementById('snap').addEventListener('click', () => {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+                const file = new File([blob], 'plant_image.jpg', { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+            });
+        });
+
+        // Start the camera when the page loads
+        window.addEventListener('load', startCamera);
+
+        // Handle form submission and prediction
+        document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (fileInput.files.length === 0) {
+                alert('Please capture a photo first!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                predictionText.textContent = `Predicted Species: ${data.prediction}`;
+            } catch (error) {
+                predictionText.textContent = 'Prediction failed: ' + error.message;
+            }
+        });
+    </script>
+</body>
+
+</html>

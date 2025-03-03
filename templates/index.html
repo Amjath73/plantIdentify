@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Plant Species Identification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #image-preview-container {
+            margin-top: 15px;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            display: none;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        #prediction {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        #notification {
+            margin-top: 15px;
+            color: #e74c3c;
+        }
+
+        #spinner {
+            display: none;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Ardru's Plant Identification</h1>
+        <form id="upload-form" action="/predict" method="post" enctype="multipart/form-data">
+            <input type="file" id="file-input" name="file" accept="image/*" onchange="previewImage(event)" required>
+            <button type="submit">Predict</button>
+            <button type="button" onclick="resetForm()">Reset</button>
+        </form>
+
+        <div id="spinner">⏳ Processing...</div>
+
+        <div id="image-preview-container">
+            <img id="image-preview" src="" alt="Image Preview">
+        </div>
+
+        <div id="notification"></div>
+
+        <div id="prediction"></div>
+    </div>
+
+    <script>
+        const maxFileSize = 5 * 1024 * 1024; // 5 MB
+
+        function previewImage(event) {
+            const input = event.target;
+            const file = input.files[0];
+
+            if (!file) return;
+
+            // File validation
+            if (!file.type.startsWith('image/')) {
+                showNotification('Please upload a valid image file.');
+                input.value = ''; // Clear the input
+                return;
+            }
+
+            if (file.size > maxFileSize) {
+                showNotification('File size exceeds 5MB. Please upload a smaller file.');
+                input.value = ''; // Clear the input
+                return;
+            }
+
+            // Show image preview
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.getElementById('image-preview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showNotification(message, color = '#e74c3c') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.color = color;
+        }
+
+        function resetForm() {
+            document.getElementById('upload-form').reset();
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('prediction').textContent = '';
+            document.getElementById('notification').textContent = '';
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(this);
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = 'block'; // Show spinner
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('prediction').textContent = 'Prediction: ' + data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                spinner.style.display = 'none'; // Hide spinner
+            });
+        });
+    </script>
+</body>
+
+</html>
