@@ -12,13 +12,21 @@ import shutil
 # Initialize FastAPI app
 app = FastAPI()
 
-# Model path (Change if needed)
+# Get model path from Railway environment variables
 MODEL_PATH = os.getenv("MODEL_PATH", "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
 
-# Load the model
-print("Loading model...")
-model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
-print("Model loaded successfully!")
+# Check if model exists before loading
+if not os.path.exists(MODEL_PATH):
+    print(f"❌ Model file not found at {MODEL_PATH}. Ensure the model is uploaded to Railway.")
+    model = None
+else:
+    print("✅ Loading model...")
+    try:
+        model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
+        print("✅ Model loaded successfully!")
+    except Exception as e:
+        print(f"❌ Error loading model: {e}")
+        model = None  # Prevent app from crashing
 
 # Class labels
 class_labels = [
@@ -68,6 +76,9 @@ def home():
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
+    if model is None:
+        return JSONResponse({"error": "Model not loaded. Check your Railway setup."}, status_code=500)
+
     file_path = f"temp_{file.filename}"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -79,5 +90,5 @@ async def predict(file: UploadFile = File(...)):
 
 # Run FastAPI
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # Railway sets PORT dynamically
+    port = int(os.getenv("PORT", 8000))  # Railway provides PORT dynamically
     uvicorn.run(app, host="0.0.0.0", port=port)
