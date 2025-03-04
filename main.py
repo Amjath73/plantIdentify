@@ -14,6 +14,7 @@ app = FastAPI()
 
 # Get model path from Railway environment variables
 MODEL_PATH = os.getenv("MODEL_PATH", "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
+print(f"🔍 Model path: {MODEL_PATH}")
 
 # Check if model exists before loading
 if not os.path.exists(MODEL_PATH):
@@ -53,15 +54,21 @@ class_labels = [
 
 # Function to preprocess and predict
 def model_predict(img_path, model):
-    img = load_img(img_path, target_size=(224, 224))
-    x = img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = x / 255.0  # Normalize input
-    preds = model.predict(x)
-    return preds
+    try:
+        img = load_img(img_path, target_size=(224, 224))
+        x = img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        x = x / 255.0  # Normalize input
+        preds = model.predict(x)
+        return preds
+    except Exception as e:
+        print(f"❌ Prediction error: {e}")
+        return None
 
 # Decode predictions
 def custom_decode_predictions(preds, class_labels, top=1):
+    if preds is None:
+        return [["Error", 0.0]]
     results = []
     for pred in preds:
         top_indices = pred.argsort()[-top:][::-1]
@@ -80,15 +87,21 @@ async def predict(file: UploadFile = File(...)):
         return JSONResponse({"error": "Model not loaded. Check your Railway setup."}, status_code=500)
 
     file_path = f"temp_{file.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    preds = model_predict(file_path, model)
-    pred_class = custom_decode_predictions(preds, class_labels, top=1)
-    os.remove(file_path)  # Clean up file after prediction
+        preds = model_predict(file_path, model)
+        pred_class = custom_decode_predictions(preds, class_labels, top=1)
+    except Exception as e:
+        return JSONResponse({"error": f"Prediction failed: {e}"}, status_code=500)
+    finally:
+        os.remove(file_path)  # Clean up file after prediction
+
     return JSONResponse({"prediction": pred_class[0][0][0], "confidence": pred_class[0][0][1]})
 
 # Run FastAPI
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # Railway provides PORT dynamically
+    port = int(os.getenv("PORT", 8080))  # Railway provides PORT dynamically
+    print(f"🚀 Starting server on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)
