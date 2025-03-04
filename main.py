@@ -7,42 +7,15 @@ import tensorflow_hub as hub
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img, img_to_array
-import uvicorn
 import shutil
-import gdown
-import zipfile
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Google Drive file ID (Replace with your actual file ID)
-file_id = "1wBABmgqx4FRNQNSiYiVpzn2f22jBz0Ih"  
-zip_path = "data.zip"
-extract_path = "datas_dataset"
+# Model path (Change if needed)
+MODEL_PATH = os.getenv("MODEL_PATH", "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
 
-# Function to download and extract dataset
-def setup_dataset():
-    url = f"https://drive.google.com/uc?id={file_id}"
-    if not os.path.exists(extract_path) or not os.listdir(extract_path):
-        print("Downloading dataset ZIP from Google Drive...")
-        gdown.download(url, zip_path, quiet=False)
-        print("Download complete!")
-
-        print("Extracting dataset...")
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(extract_path)
-        print("Extraction complete!")
-
-        os.remove(zip_path)
-        print("Dataset is ready to use!")
-
-# Run dataset setup on startup
-setup_dataset()
-
-# Model path (Ensure this is available on Render or update accordingly)
-MODEL_PATH = "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5"  # Change to match your deployment setup
-
-# Load the model with the custom KerasLayer
+# Load the model
 print("Loading model...")
 model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
 print("Model loaded successfully!")
@@ -91,11 +64,7 @@ def custom_decode_predictions(preds, class_labels, top=1):
 # API Endpoints
 @app.get("/")
 def home():
-    return {"message": "FastAPI Plant Prediction API is running!"}
-    
-@app.head("/")
-async def head_root():
-    return {}
+    return {"message": "FastAPI Plant Prediction API is running on Railway!"}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
@@ -110,5 +79,5 @@ async def predict(file: UploadFile = File(...)):
 
 # Run FastAPI
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Render provides the PORT variable
+    port = int(os.getenv("PORT", 8000))  # Railway sets PORT dynamically
     uvicorn.run(app, host="0.0.0.0", port=port)
