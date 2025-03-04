@@ -23,12 +23,12 @@ def download_model():
     if not os.path.exists(MODEL_PATH):
         print("Downloading model from Google Drive...")
         url = f"https://drive.google.com/uc?id={MODEL_FILE_ID}"
-        try:
-            gdown.download(url, MODEL_PATH, quiet=False)
+        gdown.download(url, MODEL_PATH, quiet=False)
+        if os.path.exists(MODEL_PATH):
             print("Model downloaded successfully!")
-        except Exception as e:
-            print(f"Error downloading model: {e}")
-            exit(1)  # Exit if the model fails to download
+        else:
+            print("Model download failed!")
+            exit(1)  # Stop execution if the model is missing
 
 # Ensure model is available before loading
 download_model()
@@ -98,4 +98,9 @@ async def predict(file: UploadFile = File(...)):
 # Run FastAPI
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
+    print(f"Starting FastAPI on port {port}...")
+    print(f"Using Python version: {os.sys.version}")
+    print(f"Checking model path: {MODEL_PATH}")
+    if not os.path.exists(MODEL_PATH):
+        print("ERROR: Model file not found!")
     uvicorn.run(app, host="0.0.0.0", port=port)
