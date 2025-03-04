@@ -13,7 +13,7 @@ import shutil
 app = FastAPI()
 
 # Get model path from Railway environment variables
-MODEL_PATH = os.getenv("MODEL_PATH", "./model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
+MODEL_PATH = os.getenv("MODEL_PATH", "/model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
 print(f"🔍 Model path: {MODEL_PATH}")
 
 # Check if model exists before loading
