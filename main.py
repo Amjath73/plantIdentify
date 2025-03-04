@@ -11,8 +11,8 @@ import shutil
 import requests
 
 # Set model path and download if necessary
-MODEL_URL = "https://drive.google.com/file/d/1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA/view?usp=sharing"  # Replace with actual model link
-MODEL_PATH = os.getenv("MODEL_PATH", "/app/model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"
+MODEL_PATH = "/app/model/mobilenetv2.h5"
 
 # Ensure model directory exists
 os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
