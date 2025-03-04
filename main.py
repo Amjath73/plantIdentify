@@ -8,26 +8,34 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img, img_to_array
 import shutil
+import requests
+
+# Set model path and download if necessary
+MODEL_URL = "https://drive.google.com/file/d/1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA/view?usp=sharing"  # Replace with actual model link
+MODEL_PATH = os.getenv("MODEL_PATH", "/app/model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
+
+# Ensure model directory exists
+os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+
+if not os.path.exists(MODEL_PATH):
+    print(f"📥 Model not found locally. Downloading from {MODEL_URL} ...")
+    response = requests.get(MODEL_URL, stream=True)
+    with open(MODEL_PATH, "wb") as file:
+        for chunk in response.iter_content(chunk_size=1024):
+            file.write(chunk)
+    print("✅ Model downloaded successfully!")
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Get model path from Railway environment variables
-MODEL_PATH = os.getenv("MODEL_PATH", "/model/20240921-2014-full-image-set-mobilenetv2-Adam.h5")
+# Load model
 print(f"🔍 Model path: {MODEL_PATH}")
-
-# Check if model exists before loading
-if not os.path.exists(MODEL_PATH):
-    print(f"❌ Model file not found at {MODEL_PATH}. Ensure the model is uploaded to Railway.")
-    model = None
-else:
-    print("✅ Loading model...")
-    try:
-        model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
-        print("✅ Model loaded successfully!")
-    except Exception as e:
-        print(f"❌ Error loading model: {e}")
-        model = None  # Prevent app from crashing
+try:
+    model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
+    print("✅ Model loaded successfully!")
+except Exception as e:
+    print(f"❌ Error loading model: {e}")
+    model = None  # Prevent app from crashing
 
 # Class labels
 class_labels = [
