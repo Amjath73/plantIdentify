@@ -1,14 +1,14 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
 import os
 import uvicorn
 import numpy as np
-import tensorflow_hub as hub
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import load_img, img_to_array
 import shutil
 import requests
+import tensorflow_hub as hub
+import tensorflow as tf
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import load_img, img_to_array
 
 # Set model path and download if necessary
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"
@@ -89,9 +89,9 @@ def custom_decode_predictions(preds, class_labels, top=1):
     return results
 
 # API Endpoints
-@app.get("/")
-def home():
-    return {"message": "FastAPI Plant Prediction API is running on Railway!"}
+@app.get("/health")
+def health_check():
+    return {"status": "running", "message": "FastAPI Plant Prediction API is healthy!"}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
