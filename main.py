@@ -1,48 +1,39 @@
+import os
+import gdown
+import shutil
+import zipfile
+import numpy as np
+import uvicorn
+import tensorflow as tf
+import tensorflow_hub as hub
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
-import os
-import uvicorn
-import numpy as np
-import tensorflow_hub as hub
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img, img_to_array
-import uvicorn
-import shutil
-import gdown
-import zipfile
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Google Drive file ID (Replace with your actual file ID)
-file_id = "1wBABmgqx4FRNQNSiYiVpzn2f22jBz0Ih"
-zip_path = "data.zip"
-extract_path = "datas_dataset"
+# Google Drive File ID for model
+MODEL_FILE_ID = "1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"  # Replace with actual ID
+MODEL_PATH = "model.h5"
 
-# Function to download and extract dataset
-def setup_dataset():
-    url = f"https://drive.google.com/uc?id={file_id}"
-    if not os.path.exists(extract_path) or not os.listdir(extract_path):
-        print("Downloading dataset ZIP from Google Drive...")
-        gdown.download(url, zip_path, quiet=False)
-        print("Download complete!")
+# Function to download model if not available
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print("Downloading model from Google Drive...")
+        url = f"https://drive.google.com/uc?id={MODEL_FILE_ID}"
+        try:
+            gdown.download(url, MODEL_PATH, quiet=False)
+            print("Model downloaded successfully!")
+        except Exception as e:
+            print(f"Error downloading model: {e}")
+            exit(1)  # Exit if the model fails to download
 
-        print("Extracting dataset...")
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(extract_path)
-        print("Extraction complete!")
+# Ensure model is available before loading
+download_model()
 
-        os.remove(zip_path)
-        print("Dataset is ready to use!")
-
-# Run dataset setup on startup
-setup_dataset()
-
-# Model path (Ensure this is available on Render or update accordingly)
-MODEL_PATH = "model/20240921-2014-full-image-set-mobilenetv2-Adam.h5"
-
-# Load the model with the custom KerasLayer
+# Load the model with custom KerasLayer
 print("Loading model...")
 model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
 print("Model loaded successfully!")
@@ -92,8 +83,6 @@ def custom_decode_predictions(preds, class_labels, top=1):
 @app.get("/")
 def home():
     return {"message": "FastAPI Plant Prediction API is running!"}
-def read_root():
-    return {"message": "Hello from FastAPI on Render!"}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
