@@ -1,18 +1,28 @@
 import os
 import gdown
 import shutil
-import zipfile
 import numpy as np
 import uvicorn
 import tensorflow as tf
 import tensorflow_hub as hub
+from tempfile import NamedTemporaryFile
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img, img_to_array
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://plant-identify.onrender.com/"],  # Change to ["https://your-frontend.com"] for security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Google Drive File ID for model
 MODEL_FILE_ID = "1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"  # Replace with actual ID
@@ -86,14 +96,16 @@ def home():
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
-    file_path = f"temp_{file.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    with NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+        shutil.copyfileobj(file.file, temp_file)
+        temp_file_path = temp_file.name
 
-    preds = model_predict(file_path, model)
-    pred_class = custom_decode_predictions(preds, class_labels, top=1)
-    os.remove(file_path)  # Clean up file after prediction
-    return JSONResponse({"prediction": pred_class[0][0][0], "confidence": pred_class[0][0][1]})
+    try:
+        preds = model_predict(temp_file_path, model)
+        pred_class = custom_decode_predictions(preds, class_labels, top=1)
+        return JSONResponse({"prediction": pred_class[0][0][0], "confidence": pred_class[0][0][1]})
+    finally:
+        os.remove(temp_file_path)  # Clean up temp file
 
 # Run FastAPI
 if __name__ == "__main__":
