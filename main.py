@@ -25,8 +25,9 @@ app.add_middleware(
 )
 
 # Google Drive File ID for model
-MODEL_FILE_ID = "1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"  # Replace with actual ID
+url = "https://drive.google.com/file/d/1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA/view?usp=sharing"  # Replace with actual ID
 MODEL_PATH = "model.h5"
+gdown.download(url, MODEL_PATH, quiet=False)
 
 # Function to download model if not available
 def download_model():
