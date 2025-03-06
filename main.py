@@ -18,16 +18,15 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://plant-identify.onrender.com/"],  # Change to ["https://your-frontend.com"] for security
+    allow_origins=["http://localhost:3000", "https://plant-identify.onrender.com/"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Google Drive File ID for model
-url = "https://drive.google.com/file/d/1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA/view?usp=sharing"  # Replace with actual ID
+# Google Drive Model File ID (Extracted from Link)
+MODEL_FILE_ID = "1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"  # Replace with actual ID
 MODEL_PATH = "model.h5"
-gdown.download(url, MODEL_PATH, quiet=False)
 
 # Function to download model if not available
 def download_model():
@@ -35,19 +34,27 @@ def download_model():
         print("Downloading model from Google Drive...")
         url = f"https://drive.google.com/uc?id={MODEL_FILE_ID}"
         gdown.download(url, MODEL_PATH, quiet=False)
-        if os.path.exists(MODEL_PATH):
-            print("Model downloaded successfully!")
-        else:
-            print("Model download failed!")
-            exit(1)  # Stop execution if the model is missing
+
+    # Verify if model file exists and is valid
+    if os.path.exists(MODEL_PATH):
+        try:
+            _ = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
+            print("✅ Model downloaded and verified successfully!")
+        except Exception as e:
+            print(f"❌ Model corrupted: {e}")
+            os.remove(MODEL_PATH)  # Delete invalid file
+            download_model()  # Retry download
+    else:
+        print("❌ Model download failed! Exiting...")
+        exit(1)
 
 # Ensure model is available before loading
 download_model()
 
-# Load the model with custom KerasLayer
+# Load the model
 print("Loading model...")
 model = load_model(MODEL_PATH, custom_objects={'KerasLayer': hub.KerasLayer})
-print("Model loaded successfully!")
+print("✅ Model loaded successfully!")
 
 # Class labels
 class_labels = [
@@ -112,8 +119,4 @@ async def predict(file: UploadFile = File(...)):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"Starting FastAPI on port {port}...")
-    print(f"Using Python version: {os.sys.version}")
-    print(f"Checking model path: {MODEL_PATH}")
-    if not os.path.exists(MODEL_PATH):
-        print("ERROR: Model file not found!")
     uvicorn.run(app, host="0.0.0.0", port=port)
