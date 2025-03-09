@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 # Google Drive Model File ID (Extracted from Link)
-MODEL_FILE_ID = "1uCrx2dzeaYxoqatYgfA4dB4WYR8QaUVA"  # Replace with actual ID
+MODEL_FILE_ID = "1SqLnP1HqtCtgTG0YnaXIrKqTwUHRLd8n"  # Replace with actual ID
 MODEL_PATH = "model.h5"
 
 # Function to download model if not available
